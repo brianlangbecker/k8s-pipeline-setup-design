@@ -1,0 +1,153 @@
+mode: daemonset
+
+image:
+  repository: ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-k8s
+
+# Required to use the kubeletstats cpu/memory utilization metrics
+clusterRole:
+  create: true
+  rules:
+    - apiGroups: 
+        - ""
+      resources:
+        - nodes/proxy
+      verbs:
+        - get
+
+extraEnvs:
+  - name: K8S_CLUSTER_NAME
+    value: "YOUR_CLUSTER_NAME"
+
+# Required for hostmetrics to access host filesystem
+extraVolumes:
+  - name: hostfs
+    hostPath:
+      path: /
+      type: Directory
+
+extraVolumeMounts:
+  - name: hostfs
+    mountPath: /hostfs
+    readOnly: true
+    mountPropagation: HostToContainer
+
+# Security context for accessing host metrics
+securityContext:
+  runAsUser: 0
+  runAsGroup: 0
+  fsGroup: 0
+
+# Required for host network access
+hostNetwork: true
+dnsPolicy: ClusterFirstWithHostNet
+
+presets:
+  # enables the k8sattributesprocessor and adds it to the traces, metrics, and logs pipelines
+  kubernetesAttributes:
+    enabled: true
+    extractAllPodLabels: true
+    extractAllPodAnnotations: true
+  # enables the kubeletstatsreceiver and adds it to the metrics pipelines
+  kubeletMetrics:
+    enabled: true
+
+config:
+  receivers:
+    jaeger: null
+    zipkin: null
+    kubeletstats:
+      insecure_skip_verify: true # required as most clusters use self-signed certificates
+      collection_interval: 30s
+      metric_groups:
+        - node
+        - pod
+      metrics:
+        k8s.node.uptime:
+          enabled: true
+        k8s.pod.uptime:
+          enabled: true
+        k8s.pod.cpu_limit_utilization:
+          enabled: true
+        k8s.pod.cpu_request_utilization:
+          enabled: true
+        k8s.pod.memory_limit_utilization:
+          enabled: true
+        k8s.pod.memory_request_utilization:
+          enabled: true
+    hostmetrics:
+      root_path: /hostfs
+      collection_interval: 10s
+      scrapers:
+        cpu:
+          metrics:
+            system.cpu.utilization:
+              enabled: true
+        memory:
+          metrics:
+            system.memory.utilization:
+              enabled: true
+        load: {}
+        disk: {}
+        filesystem: {}
+        network: {}
+
+  processors:
+    resource:
+      attributes:
+        - key: k8s.cluster.name
+          value: "${env:K8S_CLUSTER_NAME}"
+          action: upsert
+    batch: {}
+
+  exporters:
+    otlp:
+      endpoint: "http://bindplane-gateway-alb.your-domain.com:4317"
+      tls:
+        insecure: true
+      headers:
+        "x-honeycomb-dataset": "traces"
+    otlp/k8s-metrics:
+      endpoint: "http://bindplane-gateway-alb.your-domain.com:4317"
+      tls:
+        insecure: true
+      headers:
+        "x-honeycomb-dataset": "k8s-metrics"
+    otlp/k8s-logs:
+      endpoint: "http://bindplane-gateway-alb.your-domain.com:4317"
+      tls:
+        insecure: true
+      headers:
+        "x-honeycomb-dataset": "k8s-logs"
+    otlp/k8s-hosts-metrics:
+      endpoint: "http://bindplane-gateway-alb.your-domain.com:4317"
+      tls:
+        insecure: true
+      headers:
+        "x-honeycomb-dataset": "k8s-hosts-metrics"
+
+  service:
+    pipelines:
+      traces:
+        receivers: [otlp]
+        processors: [k8sattributes, resource, batch]
+        exporters: [otlp]
+      metrics:
+        processors: [k8sattributes, resource, batch]
+        exporters: [otlp/k8s-metrics]
+      logs:
+        processors: [k8sattributes, resource, batch]
+        exporters: [otlp/k8s-logs]
+      metrics/hostmetrics:
+        receivers: [hostmetrics]
+        processors: [resource, batch]
+        exporters: [otlp/k8s-hosts-metrics]
+
+ports:
+  jaeger-compact:
+    enabled: false
+  jaeger-thrift:
+    enabled: false
+  jaeger-grpc:
+    enabled: false
+  zipkin:
+    enabled: false
