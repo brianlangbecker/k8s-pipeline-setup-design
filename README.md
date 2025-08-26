@@ -169,12 +169,12 @@ The DaemonSet collector includes additional system monitoring:
 
 - Helm 3.0+
 - Kubernetes 1.24+
-- Honeycomb Enterprise+ license key (contact your Honeycomb account team)
+- Honeycomb Telemetry Manager license key (contact your Honeycomb account team)
 - AWS ALB for load balancing (optional but recommended for production)
 
 ### Install BindPlane in Kubernetes
 
-> **Note**: You'll need a Honeycomb Enterprise+ license key to use BindPlane. If you don't have one, contact your Honeycomb account team or reach out to Honeycomb support to discuss licensing options.
+> **Note**: You'll need a Honeycomb Telemetry Manager license key to use BindPlane. If you don't have one, reach out to Honeycomb to get a Telemetry Manager license key.
 
 ```bash
 # 1. Add Honeycomb Helm repository
