@@ -174,6 +174,8 @@ The DaemonSet collector includes additional system monitoring:
 
 ### Install BindPlane in Kubernetes
 
+> **Note**: You'll need a Honeycomb Enterprise+ license key to use BindPlane. If you don't have one, contact your Honeycomb account team or reach out to Honeycomb support to discuss licensing options.
+
 ```bash
 # 1. Add Honeycomb Helm repository
 helm repo add honeycomb https://honeycombio.github.io/helm-charts
