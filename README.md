@@ -4,6 +4,7 @@ Complete Kubernetes observability solution that extends Honeycomb's OpenTelemetr
 
 ## Table of Contents
 
+- [License and API Key Requirements](#license-and-api-key-requirements)
 - [Architecture Overview](#architecture-overview)
 - [Project Structure](#project-structure)
 - [Key Setup Sections](#key-setup-sections)
@@ -13,6 +14,30 @@ Complete Kubernetes observability solution that extends Honeycomb's OpenTelemetr
   - [3. Verification and Troubleshooting](#troubleshooting)
 - [Configuration Files](#configuration-files)
 - [Documentation](#documentation)
+
+## License and API Key Requirements
+
+This solution requires two different credentials from Honeycomb:
+
+### 1. Honeycomb API Key
+- **Purpose**: Used by OpenTelemetry collectors to send telemetry data directly to Honeycomb
+- **Where to find**: Available in your Honeycomb environment settings under "API Keys"
+- **Used in**: Kubernetes secrets and collector configurations
+- **Required for**: Basic telemetry data ingestion to Honeycomb
+
+### 2. Pipeline Manager (powered by BindPlane) License Key
+- **Purpose**: Required to run Pipeline Manager for centralized telemetry processing, routing, and transformation
+- **Where to get**: Contact Honeycomb to obtain a Pipeline Manager license key
+- **Used in**: BindPlane/HTP deployment configuration
+- **Required for**: Advanced telemetry management features including:
+  - Centralized API key management
+  - Data transformation and filtering
+  - Multi-destination routing
+  - Enterprise governance and compliance features
+
+> **Note**: You can start with just a Honeycomb API key to send data directly to Honeycomb, but Pipeline Manager provides significant operational benefits for production environments.
+
+---
 
 ## Quick Start Guide
 
