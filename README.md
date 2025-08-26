@@ -13,7 +13,7 @@ Complete Kubernetes observability solution that extends Honeycomb's OpenTelemetr
   - [2. Deploying OpenTelemetry Collectors](#deploying-opentelemetry-collectors)
   - [3. Verification and Troubleshooting](#troubleshooting)
 - [Configuration Files](#configuration-files)
-- [K8S Architecture Documentation](K8S%20Architecture.md)
+- [K8S Architecture Documentation](docs/K8S%20Architecture.md)
 - [Documentation](#documentation)
 
 ## License and API Key Requirements
@@ -54,7 +54,7 @@ Follow these steps in order to deploy the complete observability stack:
 
 This project provides the [Honeycomb Kubernetes OpenTelemetry telemetry pipeline](https://docs.honeycomb.io/send-data/kubernetes/opentelemetry/create-telemetry-pipeline/) configurations enhanced with host metrics collection and routed through Pipeline Manager (powered by BindPlane) for centralized telemetry management.
 
-For detailed architecture diagrams and design decisions, see [K8S Architecture.md](K8S%20Architecture.md).
+For detailed architecture diagrams and design decisions, see [K8S Architecture.md](docs/K8S%20Architecture.md).
 
 - **Standard Honeycomb Collectors**: Uses official collector configurations for Kubernetes metrics, events, and traces
 - **Enhanced Host Metrics**: Adds hostmetrics receiver to DaemonSet collector for comprehensive system-level monitoring
@@ -71,12 +71,12 @@ k8s-pipeline-setup-design/
 ├── docs/             # Documentation
 │   ├── data-collection-reference.md  # Comprehensive telemetry data details
 │   ├── host-metrics.md              # Host metrics collection details
+│   ├── K8S Architecture.md          # Detailed architecture documentation
 │   └── upgrading-collectors.md      # Upgrade procedures
 ├── images/           # Architecture diagrams
 │   ├── BigPipeLine.png
 │   ├── Bindplane.png
 │   └── HelmK8S1.png
-├── K8S Architecture.md    # Detailed architecture documentation
 └── README.md             # This file
 ```
 
@@ -401,7 +401,7 @@ All configurations are pre-configured to route telemetry through BindPlane serve
 
 ## Documentation
 
-- **[K8S Architecture.md](K8S%20Architecture.md)** - Detailed architecture diagrams and design decisions
+- **[K8S Architecture.md](docs/K8S%20Architecture.md)** - Detailed architecture diagrams and design decisions
 - **[Host Metrics Documentation](docs/host-metrics.md)** - Comprehensive host metrics collection details
 - **[Data Collection Reference](docs/data-collection-reference.md)** - Complete telemetry data inventory
 - **[Upgrading Collectors](docs/upgrading-collectors.md)** - Upgrade procedures for Helm Chart and BindPlane collectors
