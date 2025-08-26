@@ -13,6 +13,7 @@ Complete Kubernetes observability solution that extends Honeycomb's OpenTelemetr
   - [2. Deploying OpenTelemetry Collectors](#deploying-opentelemetry-collectors)
   - [3. Verification and Troubleshooting](#troubleshooting)
 - [Configuration Files](#configuration-files)
+- [K8S Architecture Documentation](K8S%20Architecture.md)
 - [Documentation](#documentation)
 
 ## License and API Key Requirements
