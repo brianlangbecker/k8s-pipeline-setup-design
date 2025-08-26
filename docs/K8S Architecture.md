@@ -28,11 +28,11 @@ A bit of terminology before we start:
 4. **Transmit Telemetry**: Each Collector will send telemetry data directly to Honeycomb or Bindplane over gRPC.
 5. **Destination:** At this step, telemetry arrives at Honeycomb (default) or Bindplane Gateway (Highly recommended).
 
-![](images/HelmK8S1.png)
+![](../images/HelmK8S1.png)
 
 ## Detailed Pipeline Overview
 
-![](images/BigPipeLine.png)
+![](../images/BigPipeLine.png)
 
 #
 
@@ -40,7 +40,7 @@ A bit of terminology before we start:
 
 # Operating BindPlane with Helm Chart Collectors
 
-![](images/Bindplane.png)
+![](../images/Bindplane.png)
 
 1. Box represents all the components from the previous diagram.
 2. BindPlane gateway, which serves as the entry point into BindPlane. It receives OTLP and other telemetry formats.
