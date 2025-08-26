@@ -1,6 +1,6 @@
 # K8S Pipeline Setup and Design (EARLY DRAFT)
 
-Complete Kubernetes observability solution that extends Honeycomb's OpenTelemetry collector setup with comprehensive host-level system metrics. This configuration provides deep visibility into your K8s clusters by collecting application traces, Kubernetes metrics and events, plus detailed host performance data from CPU, memory, disk, and network resources.
+Complete Kubernetes observability solution that extends Honeycomb's OpenTelemetry collector setup with comprehensive host-level system metrics. This configuration provides deep visibility into your K8s clusters by collecting application traces, Kubernetes metrics and events, plus detailed host performance data from CPU, memory, disk, and network resources using Pipeline Manager (powered by BindPlane).
 
 ## Table of Contents
 
@@ -26,13 +26,13 @@ Follow these steps in order to deploy the complete observability stack:
 
 ## Architecture Overview
 
-This project provides the [Honeycomb Kubernetes OpenTelemetry telemetry pipeline](https://docs.honeycomb.io/send-data/kubernetes/opentelemetry/create-telemetry-pipeline/) configurations enhanced with host metrics collection and routed through BindPlane for centralized telemetry management.
+This project provides the [Honeycomb Kubernetes OpenTelemetry telemetry pipeline](https://docs.honeycomb.io/send-data/kubernetes/opentelemetry/create-telemetry-pipeline/) configurations enhanced with host metrics collection and routed through Pipeline Manager (powered by BindPlane) for centralized telemetry management.
 
 For detailed architecture diagrams and design decisions, see [K8S Architecture.md](K8S%20Architecture.md).
 
 - **Standard Honeycomb Collectors**: Uses official collector configurations for Kubernetes metrics, events, and traces
 - **Enhanced Host Metrics**: Adds hostmetrics receiver to DaemonSet collector for comprehensive system-level monitoring
-- **BindPlane Gateway**: Routes all telemetry through BindPlane server for centralized processing, transformation, and API key management
+- **Pipeline Manager Gateway**: Routes all telemetry through Pipeline Manager (powered by BindPlane) for centralized processing, transformation, and API key management
 - **Multiple Datasets**: Organizes data into `k8s-metrics`, `k8s-events`, `k8s-logs`, and `k8s-hosts-metrics` datasets in Honeycomb
 
 ## Project Structure
@@ -169,12 +169,12 @@ The DaemonSet collector includes additional system monitoring:
 
 - Helm 3.0+
 - Kubernetes 1.24+
-- Honeycomb Telemetry Manager license key (contact your Honeycomb account team)
+- Pipeline Manager (powered by BindPlane) license key (contact your Honeycomb account team)
 - AWS ALB for load balancing (optional but recommended for production)
 
 ### Install BindPlane in Kubernetes
 
-> **Note**: You'll need a Honeycomb Telemetry Manager license key to use BindPlane. If you don't have one, reach out to Honeycomb to get a Telemetry Manager license key.
+> **Note**: You'll need a Pipeline Manager (powered by BindPlane) license key to use BindPlane. If you don't have one, reach out to Honeycomb to get a Pipeline Manager license key.
 
 ```bash
 # 1. Add Honeycomb Helm repository
