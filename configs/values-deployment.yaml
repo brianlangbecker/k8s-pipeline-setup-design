@@ -5,7 +5,7 @@ image:
 
 extraEnvs:
   - name: K8S_CLUSTER_NAME
-    value: "YOUR_CLUSTER_NAME"
+    value: "docker-desktop"
 
 replicaCount: 1
 
@@ -27,11 +27,6 @@ config:
     jaeger: null
     zipkin: null
   processors:
-    resource:
-      attributes:
-        - key: k8s.cluster.name
-          value: "${env:K8S_CLUSTER_NAME}"
-          action: upsert
     transform/events:
       error_mode: ignore
       log_statements:
@@ -74,16 +69,12 @@ config:
         "x-honeycomb-dataset": "k8s-events"
 
   service:
-    pipelines:
-      metrics:
-        receivers: [k8s_cluster]
-        processors: [resource, batch]
-        exporters: [otlp/k8s-metrics]
-      logs:
-        receivers: [k8s_events]
-        processors: [transform/events, resource, batch/events]
-        exporters: [otlp/k8s-events]
-      traces:
-        receivers: [otlp]
-        processors: [resource, batch]
-        exporters: [otlp]
+service:
+  pipelines:
+    traces: null
+    metrics:
+      exporters: [otlp/k8s-metrics]
+    logs:
+      processors: [memory_limiter, transform/events, batch]
+      exporters: [otlp/k8s-events]
+

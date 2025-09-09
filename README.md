@@ -21,12 +21,14 @@ Complete Kubernetes observability solution that extends Honeycomb's OpenTelemetr
 This solution requires two different credentials from Honeycomb:
 
 ### 1. Honeycomb API Key
+
 - **Purpose**: Used by OpenTelemetry collectors to send telemetry data directly to Honeycomb
 - **Where to find**: Available in your Honeycomb environment settings under "API Keys"
 - **Used in**: Kubernetes secrets and collector configurations
 - **Required for**: Basic telemetry data ingestion to Honeycomb
 
 ### 2. Pipeline Manager (powered by BindPlane) License Key
+
 - **Purpose**: Required to run Pipeline Manager for centralized telemetry processing, routing, and transformation
 - **Where to get**: Contact Honeycomb to obtain a Pipeline Manager license key
 - **Used in**: BindPlane/HTP deployment configuration
@@ -45,7 +47,7 @@ This solution requires two different credentials from Honeycomb:
 Follow these steps in order to deploy the complete observability stack:
 
 1. **[Set up BindPlane](#setting-up-bindplane-honeycomb-telemetry-pipeline)** - Install and configure the telemetry gateway
-2. **[Deploy Collectors](#deploying-opentelemetry-collectors)** - Install enhanced OpenTelemetry collectors  
+2. **[Deploy Collectors](#deploying-opentelemetry-collectors)** - Install enhanced OpenTelemetry collectors
 3. **[Verify Data Flow](#troubleshooting)** - Ensure telemetry is flowing correctly
 
 ---
@@ -262,12 +264,13 @@ kubectl create secret generic honeycomb --from-literal=api-key=$HONEYCOMB_API_KE
 Edit both configuration files in the `configs/` directory:
 
 **configs/values-daemonset.yaml:**
-- Replace `YOUR_CLUSTER_NAME` with your actual cluster name
+
 - Replace `bindplane-gateway-alb.your-domain.com` with your HTP endpoint:
   - **Direct service**: `htp.default.svc.cluster.local:4317`
   - **With ALB**: `your-htp-alb-endpoint.com:4317`
 
 **configs/values-deployment.yaml:**
+
 - Replace `YOUR_CLUSTER_NAME` with your actual cluster name
 - Replace `bindplane-gateway-alb.your-domain.com` with your HTP endpoint:
   - **Direct service**: `htp.default.svc.cluster.local:4317`
@@ -374,7 +377,7 @@ With debug logging enabled, you should see:
 ## Key Files in This Repository
 
 - **`configs/values-daemonset.yaml`**: Node-level collector (DaemonSet) with hostmetrics + kubeletstats receivers
-- **`configs/values-deployment.yaml`**: Cluster-level collector (Deployment) for cluster metrics and K8s events  
+- **`configs/values-deployment.yaml`**: Cluster-level collector (Deployment) for cluster metrics and K8s events
 - **`K8S Architecture.md`**: Detailed architecture diagrams and design decisions
 - **`docs/`**: Comprehensive documentation for setup, configuration, and troubleshooting
 
@@ -395,7 +398,7 @@ With debug logging enabled, you should see:
 This project provides enhanced configurations for OpenTelemetry collectors:
 
 - **[configs/values-daemonset.yaml](configs/values-daemonset.yaml)** - DaemonSet collector with hostmetrics receiver for node-level monitoring
-- **[configs/values-deployment.yaml](configs/values-deployment.yaml)** - Deployment collector for cluster metrics and Kubernetes events  
+- **[configs/values-deployment.yaml](configs/values-deployment.yaml)** - Deployment collector for cluster metrics and Kubernetes events
 
 All configurations are pre-configured to route telemetry through BindPlane server before forwarding to Honeycomb.
 

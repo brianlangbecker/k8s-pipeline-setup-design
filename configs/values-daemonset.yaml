@@ -14,9 +14,6 @@ clusterRole:
       verbs:
         - get
 
-extraEnvs:
-  - name: K8S_CLUSTER_NAME
-    value: "YOUR_CLUSTER_NAME"
 
 # Required for hostmetrics to access host filesystem
 extraVolumes:
@@ -92,11 +89,6 @@ config:
         network: {}
 
   processors:
-    resource:
-      attributes:
-        - key: k8s.cluster.name
-          value: "${env:K8S_CLUSTER_NAME}"
-          action: upsert
     batch: {}
 
   exporters:
