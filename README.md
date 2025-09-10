@@ -68,8 +68,10 @@ For detailed architecture diagrams and design decisions, see [K8S Architecture.m
 ```
 k8s-pipeline-setup-design/
 ├── configs/           # OpenTelemetry collector configurations
-│   ├── values-daemonset.yaml    # Enhanced with hostmetrics receiver
-│   └── values-deployment.yaml   # Standard Honeycomb deployment config
+│   ├── values-daemonset.yaml             # BindPlane routing with hostmetrics
+│   ├── values-daemonset-honeycomb.yaml   # Direct Honeycomb with hostmetrics  
+│   ├── values-deployment.yaml            # BindPlane routing deployment
+│   └── values-deployment-honeycomb.yaml  # Direct Honeycomb deployment
 ├── docs/             # Documentation
 │   ├── data-collection-reference.md  # Comprehensive telemetry data details
 │   ├── host-metrics.md              # Host metrics collection details
@@ -219,7 +221,7 @@ kubectl create secret generic hny-secrets \
     --from-literal=password=admin
 
 # 4. Install HTP server
-helm install htp honeycomb/htp
+helm install htp honeycomb/htp-bindplane
 
 # 5. (Optional) Port forward to access UI for initial configuration
 kubectl port-forward svc/htp 3001
@@ -261,20 +263,30 @@ kubectl create secret generic honeycomb --from-literal=api-key=$HONEYCOMB_API_KE
 
 ### Step 3: Update Configuration Files
 
-Edit both configuration files in the `configs/` directory:
+Edit the configuration files in the `configs/` directory and update cluster names where appropriate:
 
 **configs/values-daemonset.yaml:**
 
+- Update `K8S_CLUSTER_NAME` value (currently set to "docker-desktop") to your actual cluster name
 - Replace `bindplane-gateway-alb.your-domain.com` with your HTP endpoint:
   - **Direct service**: `htp.default.svc.cluster.local:4317`
   - **With ALB**: `your-htp-alb-endpoint.com:4317`
 
 **configs/values-deployment.yaml:**
 
-- Replace `YOUR_CLUSTER_NAME` with your actual cluster name
+- Update `K8S_CLUSTER_NAME` value (currently set to "docker-desktop") to your actual cluster name
 - Replace `bindplane-gateway-alb.your-domain.com` with your HTP endpoint:
   - **Direct service**: `htp.default.svc.cluster.local:4317`
   - **With ALB**: `your-htp-alb-endpoint.com:4317`
+
+**Honeycomb Direct Configurations (if not using BindPlane):**
+
+For configs ending in `-honeycomb.yaml`:
+
+- **values-daemonset-honeycomb.yaml**: Direct Honeycomb integration with hostmetrics + kubeletstats
+- **values-deployment-honeycomb.yaml**: Direct Honeycomb integration for cluster metrics + events
+- Update `K8S_CLUSTER_NAME` value to your actual cluster name
+- Ensure you have created the Honeycomb API key secret as described in Step 2
 
 ### Step 4: Add Helm Repository
 
@@ -287,18 +299,32 @@ helm repo update
 
 ### Step 5: Deploy OpenTelemetry Collectors
 
-Deploy using the official Honeycomb configurations:
+Deploy using the configurations (choose BindPlane routing or direct Honeycomb):
 
+**Option A: Route through BindPlane (recommended for production)**
 ```bash
 # 1. Deploy Deployment-mode Collector (cluster metrics and events)
 helm install otel-collector-cluster open-telemetry/opentelemetry-collector \
   --namespace opentelemetry \
   --values configs/values-deployment.yaml
 
-# 2. Deploy DaemonSet-mode Collector (node and pod metrics)
+# 2. Deploy DaemonSet-mode Collector (node and pod metrics + hostmetrics)
 helm install otel-collector open-telemetry/opentelemetry-collector \
   --namespace opentelemetry \
   --values configs/values-daemonset.yaml
+```
+
+**Option B: Send directly to Honeycomb**
+```bash
+# 1. Deploy Deployment-mode Collector (cluster metrics and events)
+helm install otel-collector-cluster open-telemetry/opentelemetry-collector \
+  --namespace opentelemetry \
+  --values configs/values-deployment-honeycomb.yaml
+
+# 2. Deploy DaemonSet-mode Collector (node and pod metrics + hostmetrics)
+helm install otel-collector open-telemetry/opentelemetry-collector \
+  --namespace opentelemetry \
+  --values configs/values-daemonset-honeycomb.yaml
 ```
 
 ### Step 6: Verify Data Flow
@@ -376,8 +402,15 @@ With debug logging enabled, you should see:
 
 ## Key Files in This Repository
 
-- **`configs/values-daemonset.yaml`**: Node-level collector (DaemonSet) with hostmetrics + kubeletstats receivers
-- **`configs/values-deployment.yaml`**: Cluster-level collector (Deployment) for cluster metrics and K8s events
+**BindPlane Routing Configurations:**
+- **`configs/values-daemonset.yaml`**: DaemonSet collector with hostmetrics + kubeletstats → BindPlane
+- **`configs/values-deployment.yaml`**: Deployment collector for cluster metrics + events → BindPlane
+
+**Direct Honeycomb Configurations:**
+- **`configs/values-daemonset-honeycomb.yaml`**: DaemonSet collector with hostmetrics + kubeletstats → Honeycomb
+- **`configs/values-deployment-honeycomb.yaml`**: Deployment collector for cluster metrics + events → Honeycomb
+
+**Documentation:**
 - **`K8S Architecture.md`**: Detailed architecture diagrams and design decisions
 - **`docs/`**: Comprehensive documentation for setup, configuration, and troubleshooting
 
@@ -395,12 +428,17 @@ With debug logging enabled, you should see:
 
 ## Configuration Files
 
-This project provides enhanced configurations for OpenTelemetry collectors:
+This project provides enhanced configurations for OpenTelemetry collectors with two routing options:
 
-- **[configs/values-daemonset.yaml](configs/values-daemonset.yaml)** - DaemonSet collector with hostmetrics receiver for node-level monitoring
-- **[configs/values-deployment.yaml](configs/values-deployment.yaml)** - Deployment collector for cluster metrics and Kubernetes events
+**BindPlane Gateway Routing:**
+- **[configs/values-daemonset.yaml](configs/values-daemonset.yaml)** - DaemonSet collector with hostmetrics + kubeletstats → BindPlane
+- **[configs/values-deployment.yaml](configs/values-deployment.yaml)** - Deployment collector for cluster metrics + events → BindPlane
 
-All configurations are pre-configured to route telemetry through BindPlane server before forwarding to Honeycomb.
+**Direct Honeycomb Integration:**
+- **[configs/values-daemonset-honeycomb.yaml](configs/values-daemonset-honeycomb.yaml)** - DaemonSet collector with hostmetrics + kubeletstats → Honeycomb
+- **[configs/values-deployment-honeycomb.yaml](configs/values-deployment-honeycomb.yaml)** - Deployment collector for cluster metrics + events → Honeycomb
+
+All DaemonSet configurations include comprehensive host-level system monitoring with automatic resource detection.
 
 ## Documentation
 

@@ -15,11 +15,40 @@ clusterRole:
         - get
 
 extraEnvs:
+  - name: K8S_CLUSTER_NAME
+    value: "docker-desktop"
+  - name: K8S_NODE_NAME
+    valueFrom:
+      fieldRef:
+        fieldPath: spec.nodeName
   - name: HONEYCOMB_API_KEY
     valueFrom:
       secretKeyRef:
         name: honeycomb
         key: api-key
+
+# Required for hostmetrics to access host filesystem
+extraVolumes:
+  - name: hostfs
+    hostPath:
+      path: /
+      type: Directory
+
+extraVolumeMounts:
+  - name: hostfs
+    mountPath: /hostfs
+    readOnly: true
+    # mountPropagation: HostToContainer # Commented out for Docker Desktop compatibility - causes "path / is mounted on / but it is not a shared or slave mount" error
+
+# Security context for accessing host metrics
+securityContext:
+  runAsUser: 0
+  runAsGroup: 0
+  fsGroup: 0
+
+# Required for host network access
+hostNetwork: true
+dnsPolicy: ClusterFirstWithHostNet
 
 presets:
   # enables the k8sattributesprocessor and adds it to the traces, metrics, and logs pipelines
@@ -46,16 +75,65 @@ config:
           enabled: true
         k8s.pod.uptime:
           enabled: true
+        k8s.pod.cpu.usage:
+          enabled: true
         k8s.pod.cpu_limit_utilization:
           enabled: true
         k8s.pod.cpu_request_utilization:
+          enabled: true
+        k8s.pod.memory.usage:
           enabled: true
         k8s.pod.memory_limit_utilization:
           enabled: true
         k8s.pod.memory_request_utilization:
           enabled: true
+        k8s.pod.network.io:
+          enabled: true
+        k8s.pod.network.errors:
+          enabled: true
+    hostmetrics:
+      root_path: /hostfs
+      collection_interval: 10s
+      scrapers:
+        cpu:
+          metrics:
+            system.cpu.utilization:
+              enabled: true
+        memory:
+          metrics:
+            system.memory.utilization:
+              enabled: true
+        load: {}
+        disk: {}
+        filesystem: {}
+        network: {}
+
+  processors:
+    resourcedetection:
+      detectors: [env, system]
+      system:
+        hostname_sources: ["os"]
+    resource:
+      attributes:
+        - key: k8s.cluster.name
+          value: "${env:K8S_CLUSTER_NAME}"
+          action: upsert
+        - key: host.name
+          from_attribute: k8s.node.name
+          action: upsert
+    resource/hostmetrics:
+      attributes:
+        - key: k8s.cluster.name
+          value: "${env:K8S_CLUSTER_NAME}"
+          action: upsert
+        - key: host.name
+          value: "${env:K8S_NODE_NAME}"
+          action: upsert
+    batch: {}
 
   exporters:
+    debug:
+      verbosity: detailed
     otlp:
       endpoint: 'api.honeycomb.io:443' # US instance
       #endpoint: "api.eu1.honeycomb.io:443" # EU instance
@@ -73,18 +151,30 @@ config:
       headers:
         'x-honeycomb-team': '${env:HONEYCOMB_API_KEY}'
         'x-honeycomb-dataset': 'k8s-logs'
+    otlp/k8s-hosts-metrics:
+      endpoint: 'api.honeycomb.io:443' # US instance
+      #endpoint: "api.eu1.honeycomb.io:443" # EU instance
+      headers:
+        'x-honeycomb-team': '${env:HONEYCOMB_API_KEY}'
+        'x-honeycomb-dataset': 'k8s-hosts-metrics'
 
   service:
     pipelines:
       traces:
         receivers: [otlp]
+        processors: [k8sattributes, resource, batch]
         exporters: [otlp]
+      metrics:
+        receivers: [kubeletstats]
+        processors: [k8sattributes, resource, batch]
+        exporters: [debug, otlp/k8s-metrics]
+      logs:
+        processors: [k8sattributes, resource, batch]
+        exporters: [otlp/k8s-logs]
       metrics/hostmetrics:
         receivers: [hostmetrics]
-        processors: [resource, batch]
-        exporters: [otlp/k8s-hosts-metrics]
-      logs:
-        exporters: [otlp/k8s-logs]
+        processors: [resourcedetection, resource/hostmetrics, batch]
+        exporters: [debug, otlp/k8s-hosts-metrics]
 
 
 

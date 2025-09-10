@@ -4,6 +4,8 @@ image:
   repository: ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-k8s
 
 extraEnvs:
+  - name: K8S_CLUSTER_NAME
+    value: "docker-desktop"
   - name: HONEYCOMB_API_KEY
     valueFrom:
       secretKeyRef:

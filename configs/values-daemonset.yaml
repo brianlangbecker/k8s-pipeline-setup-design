@@ -3,17 +3,29 @@ mode: daemonset
 image:
   repository: ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-k8s
 
+extraEnvs:
+  - name: K8S_CLUSTER_NAME
+    value: 'docker-desktop'
+  - name: K8S_NODE_NAME
+    valueFrom:
+      fieldRef:
+        fieldPath: spec.nodeName
+  - name: HONEYCOMB_API_KEY
+    valueFrom:
+      secretKeyRef:
+        name: honeycomb
+        key: api-key
+
 # Required to use the kubeletstats cpu/memory utilization metrics
 clusterRole:
   create: true
   rules:
-    - apiGroups: 
-        - ""
+    - apiGroups:
+        - ''
       resources:
         - nodes/proxy
       verbs:
         - get
-
 
 # Required for hostmetrics to access host filesystem
 extraVolumes:
@@ -26,7 +38,7 @@ extraVolumeMounts:
   - name: hostfs
     mountPath: /hostfs
     readOnly: true
-    mountPropagation: HostToContainer
+    # mountPropagation: HostToContainer # Commented out for Docker Desktop compatibility - causes "path / is mounted on / but it is not a shared or slave mount" error
 
 # Security context for accessing host metrics
 securityContext:
@@ -63,13 +75,21 @@ config:
           enabled: true
         k8s.pod.uptime:
           enabled: true
+        k8s.pod.cpu.usage:
+          enabled: true
         k8s.pod.cpu_limit_utilization:
           enabled: true
         k8s.pod.cpu_request_utilization:
           enabled: true
+        k8s.pod.memory.usage:
+          enabled: true
         k8s.pod.memory_limit_utilization:
           enabled: true
         k8s.pod.memory_request_utilization:
+          enabled: true
+        k8s.pod.network.io:
+          enabled: true
+        k8s.pod.network.errors:
           enabled: true
     hostmetrics:
       root_path: /hostfs
@@ -89,33 +109,53 @@ config:
         network: {}
 
   processors:
+    resourcedetection:
+      detectors: [env, system]
+      system:
+        hostname_sources: ["os"]
+    resource:
+      attributes:
+        - key: k8s.cluster.name
+          value: '${env:K8S_CLUSTER_NAME}'
+          action: upsert
+        - key: host.name
+          from_attribute: k8s.node.name
+          action: upsert
+    resource/hostmetrics:
+      attributes:
+        - key: k8s.cluster.name
+          value: '${env:K8S_CLUSTER_NAME}'
+          action: upsert
+        - key: host.name
+          value: '${env:K8S_NODE_NAME}'
+          action: upsert
     batch: {}
 
-  exporters:
-    otlp:
-      endpoint: "http://bindplane-gateway-alb.your-domain.com:4317"
-      tls:
-        insecure: true
-      headers:
-        "x-honeycomb-dataset": "traces"
-    otlp/k8s-metrics:
-      endpoint: "http://bindplane-gateway-alb.your-domain.com:4317"
-      tls:
-        insecure: true
-      headers:
-        "x-honeycomb-dataset": "k8s-metrics"
-    otlp/k8s-logs:
-      endpoint: "http://bindplane-gateway-alb.your-domain.com:4317"
-      tls:
-        insecure: true
-      headers:
-        "x-honeycomb-dataset": "k8s-logs"
-    otlp/k8s-hosts-metrics:
-      endpoint: "http://bindplane-gateway-alb.your-domain.com:4317"
-      tls:
-        insecure: true
-      headers:
-        "x-honeycomb-dataset": "k8s-hosts-metrics"
+exporters:
+  otlp:
+    endpoint: 'http://bindplane-gateway-alb.your-domain.com:4317'
+    tls:
+      insecure: true
+    headers:
+      'x-honeycomb-dataset': 'traces'
+  otlp/k8s-metrics:
+    endpoint: 'http://bindplane-gateway-alb.your-domain.com:4317'
+    tls:
+      insecure: true
+    headers:
+      'x-honeycomb-dataset': 'k8s-metrics'
+  otlp/k8s-logs:
+    endpoint: 'http://bindplane-gateway-alb.your-domain.com:4317'
+    tls:
+      insecure: true
+    headers:
+      'x-honeycomb-dataset': 'k8s-logs'
+  otlp/k8s-hosts-metrics:
+    endpoint: 'http://bindplane-gateway-alb.your-domain.com:4317'
+    tls:
+      insecure: true
+    headers:
+
 
   service:
     pipelines:
@@ -124,6 +164,7 @@ config:
         processors: [k8sattributes, resource, batch]
         exporters: [otlp]
       metrics:
+        receivers: [kubeletstats]
         processors: [k8sattributes, resource, batch]
         exporters: [otlp/k8s-metrics]
       logs:
@@ -131,7 +172,7 @@ config:
         exporters: [otlp/k8s-logs]
       metrics/hostmetrics:
         receivers: [hostmetrics]
-        processors: [resource, batch]
+        processors: [resourcedetection, resource/hostmetrics, batch]
         exporters: [otlp/k8s-hosts-metrics]
 
 ports:
@@ -143,3 +184,10 @@ ports:
     enabled: false
   zipkin:
     enabled: false
+
+
+ 
+        "x-honeycomb-dataset": "k8s-hosts-metrics"
+
+
+ 

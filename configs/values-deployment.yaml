@@ -69,12 +69,21 @@ config:
         "x-honeycomb-dataset": "k8s-events"
 
   service:
-service:
-  pipelines:
-    traces: null
-    metrics:
-      exporters: [otlp/k8s-metrics]
-    logs:
-      processors: [memory_limiter, transform/events, batch]
-      exporters: [otlp/k8s-events]
+    pipelines:
+      traces: null
+      metrics:
+        exporters: [otlp/k8s-metrics]
+      logs:
+        processors: [memory_limiter, transform/events, batch]
+        exporters: [otlp/k8s-events]
+
+ports:
+  jaeger-compact:
+    enabled: false
+  jaeger-thrift:
+    enabled: false
+  jaeger-grpc:
+    enabled: false
+  zipkin:
+    enabled: false
 
