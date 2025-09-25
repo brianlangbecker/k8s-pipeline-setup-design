@@ -17,6 +17,7 @@ export interface OtelCollectorProps {
   honeycombDataset?: string;
   grpcTargetGroup?: elbv2.ApplicationTargetGroup;
   httpTargetGroup?: elbv2.ApplicationTargetGroup;
+  healthTargetGroup?: elbv2.ApplicationTargetGroup;
 }
 
 export class OtelCollectorConstruct extends Construct {
@@ -131,6 +132,9 @@ export class OtelCollectorConstruct extends Construct {
     }
     if (props.httpTargetGroup) {
       this.service.attachToApplicationTargetGroup(props.httpTargetGroup);
+    }
+    if (props.healthTargetGroup) {
+      this.service.attachToApplicationTargetGroup(props.healthTargetGroup);
     }
   }
 }

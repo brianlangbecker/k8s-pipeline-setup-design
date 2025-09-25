@@ -73,11 +73,35 @@ export class OtelEcsCdkProjectStack extends cdk.Stack {
       defaultTargetGroups: [targetGroup]
     });
 
-    // Add listener for OTLP HTTP (port 4318)  
+    // Add listener for OTLP HTTP (port 4318)
     const httpListener = alb.addListener('HttpListener', {
       port: 4318,
       protocol: elbv2.ApplicationProtocol.HTTP,
       defaultTargetGroups: [httpTargetGroup]
+    });
+
+    // Create Target Group for Health Check
+    const healthTargetGroup = new elbv2.ApplicationTargetGroup(this, 'OtelHealthTargetGroup', {
+      vpc,
+      port: 13133,
+      protocol: elbv2.ApplicationProtocol.HTTP,
+      targetType: elbv2.TargetType.IP,
+      healthCheck: {
+        path: '/',
+        port: '13133',
+        protocol: elbv2.Protocol.HTTP,
+        interval: cdk.Duration.seconds(30),
+        timeout: cdk.Duration.seconds(5),
+        healthyThresholdCount: 2,
+        unhealthyThresholdCount: 3
+      }
+    });
+
+    // Add listener for Health Check (port 13133)
+    const healthListener = alb.addListener('HealthListener', {
+      port: 13133,
+      protocol: elbv2.ApplicationProtocol.HTTP,
+      defaultTargetGroups: [healthTargetGroup]
     });
 
     // Create OTEL Collector Service with target groups
@@ -89,7 +113,8 @@ export class OtelEcsCdkProjectStack extends cdk.Stack {
       honeycombApiKey: 'CbUVTd7D7rrdzvcV1FOu8B',
       honeycombDataset: 'otel-collector',
       grpcTargetGroup: targetGroup,
-      httpTargetGroup: httpTargetGroup
+      httpTargetGroup: httpTargetGroup,
+      healthTargetGroup: healthTargetGroup
     });
 
     // Ensure ALB can reach both OTLP ports and health check port on ECS service
@@ -111,6 +136,11 @@ export class OtelEcsCdkProjectStack extends cdk.Stack {
     new cdk.CfnOutput(this, 'OTLPHttpEndpoint', {
       value: `http://${alb.loadBalancerDnsName}:4318`,
       description: 'OTLP HTTP endpoint'
+    });
+
+    new cdk.CfnOutput(this, 'HealthCheckEndpoint', {
+      value: `http://${alb.loadBalancerDnsName}:13133`,
+      description: 'Health check endpoint'
     });
   }
 }
